@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en" data-palette="zurich" data-hud="full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>NOVA DRIFT // 04</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="game-shell">
+    <canvas id="game-canvas" aria-label="Nova Drift minimalist arcade game"></canvas>
+
+    <!-- Top Architectural HUD -->
+    <header id="hud" class="hud hidden">
+      <div class="hud-cell hud-score">
+        <div class="cell-meta">01 / SCORE <span id="overdrive-tag" class="overdrive-tag hidden">OVERDRIVE</span></div>
+        <div class="score-row">
+          <span id="score-val" class="mono-big">000000</span>
+          <div id="combo-badge" class="combo-tag hidden">
+            <span id="combo-val">x01</span>
+            <div class="combo-track"><div id="combo-bar-fill" class="combo-fill"></div></div>
+          </div>
+          <div id="chain-badge" class="chain-tag hidden">
+            <span id="chain-val">CH×02</span>
+            <div class="combo-track"><div id="chain-bar-fill" class="combo-fill"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hud-cell hud-center">
+        <div class="wave-row">
+          <span class="cell-meta">W</span>
+          <span id="wave-val" class="wave-num">01</span>
+          <span id="shield-tag" class="shield-tag hidden">[AEGIS]</span>
+          <span id="boss-tag" class="boss-tag hidden">[WARDEN]</span>
+        </div>
+        <div id="dash-pips" class="dash-pips" aria-label="Dash charges"></div>
+        <div id="perk-strip" class="perk-strip" aria-label="Active perks"></div>
+      </div>
+
+      <div class="hud-cell hud-right">
+        <div class="best-stack">
+          <span class="cell-meta">BEST</span>
+          <span id="best-val" class="mono-med">000000</span>
+        </div>
+        <div class="hud-actions">
+          <button id="mute-btn" class="tool-btn" title="Toggle sound (M)" aria-label="Toggle sound">
+            <span id="mute-icon">SND:ON</span>
+          </button>
+          <button id="hud-settings-btn" class="tool-btn" title="Settings (,)" aria-label="Open settings">
+            <span>CFG</span>
+          </button>
+          <button id="pause-btn" class="tool-btn" title="Pause (P)" aria-label="Pause game">
+            <span>II</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- 1v1 Duel Top Scoreboard (visible during Online 1v1) -->
+    <header id="duel-hud" class="duel-hud hidden">
+      <div class="duel-side duel-p1">
+        <div class="duel-name-row">
+          <span id="duel-p1-name" class="duel-name">P1</span>
+          <span id="duel-p1-shield" class="shield-tag hidden">[SHIELD]</span>
+        </div>
+        <div id="duel-p1-score" class="duel-score">00</div>
+      </div>
+
+      <div class="duel-mid">
+        <div id="duel-mode-label" class="cell-meta">DUEL // FIRST TO 05</div>
+        <div id="duel-timer" class="duel-timer">VS</div>
+        <div class="duel-meta-row">
+          <span id="duel-ping" class="cell-meta">--MS</span>
+          <button id="duel-leave-btn" class="tool-btn">EXIT</button>
+        </div>
+      </div>
+
+      <div class="duel-side duel-p2">
+        <div class="duel-name-row">
+          <span id="duel-p2-shield" class="shield-tag hidden">[SHIELD]</span>
+          <span id="duel-p2-name" class="duel-name">P2</span>
+        </div>
+        <div id="duel-p2-score" class="duel-score">00</div>
+      </div>
+    </header>
+
+    <!-- Live Bottom Telemetry Bar -->
+    <footer id="telemetry" class="telemetry hidden">
+      <span id="tel-coords">POS 000:000</span>
+      <span id="tel-skin">CRAFT // VECTOR</span>
+      <span id="tel-progress">WAVE 01 [░░░░░░░░░░]</span>
+    </footer>
+
+    <!-- Start Overlay: Minimalist Swiss / Brutalist Poster -->
+    <section id="start-overlay" class="overlay">
+      <div class="poster-card">
+        <div class="hazard-bar" aria-hidden="true"></div>
+        <div class="poster-topbar">
+          <span id="poster-edition-stamp">FIG. 04 // SWISS INTERNATIONAL GRID</span>
+          <span id="start-best-inline">BEST 000000</span>
+        </div>
+
+        <div class="poster-hero">
+          <div class="hero-left">
+            <h1 class="swiss-title">NOVA<br />DRIFT</h1>
+            <p class="swiss-lead">
+              DRIFT. DASH. SHATTER. SURVIVE SECTOR WARDENS.
+            </p>
+          </div>
+          <div class="hero-ascii" aria-hidden="true">
+            <pre id="ascii-preview"></pre>
+            <div class="ascii-caption" id="ascii-caption">01 / VECTOR</div>
+          </div>
+        </div>
+
+        <!-- Compact Minimalist Control Strip -->
+        <div class="keystrip">
+          <span><kbd>WASD</kbd>/<kbd>MOUSE</kbd> STEER</span>
+          <span><kbd>SPACE</kbd>/<kbd>CLICK</kbd> DASH</span>
+          <span><kbd>1–3</kbd> PERK</span>
+          <span><kbd>,</kbd> CONFIG</span>
+        </div>
+
+        <!-- Edition / Palette Strip -->
+        <div class="selector-block">
+          <div class="selector-head">
+            <span>EDITION</span>
+            <span id="palette-name-label" class="muted-code">ZÜRICH</span>
+          </div>
+          <div id="palette-grid" class="palette-grid"></div>
+        </div>
+
+        <!-- Craft Skins -->
+        <div class="selector-block">
+          <div class="selector-head">
+            <span>CRAFT</span>
+            <span id="skin-status-label" class="muted-code">4/8</span>
+          </div>
+          <div id="skin-grid" class="skin-grid"></div>
+        </div>
+
+        <div class="poster-actions triple">
+          <button id="start-btn" class="swiss-btn primary">SOLO [ENTER]</button>
+          <button id="open-room-btn" class="swiss-btn secondary">1V1 ROOM</button>
+          <button id="open-settings-btn" class="swiss-btn">CONFIG [,]</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Between-Wave Perk Draft Overlay -->
+    <section id="perk-overlay" class="overlay hidden">
+      <div class="poster-card wide">
+        <div class="hazard-bar" aria-hidden="true"></div>
+        <div class="poster-topbar">
+          <span id="perk-wave-label">WAVE 01 CLEARED</span>
+          <span>KEYS [1] [2] [3]</span>
+        </div>
+        <div class="draft-header">
+          <h2 id="draft-title" class="draft-title">MODULAR UPGRADE</h2>
+          <p id="draft-sub" class="draft-sub">Select one module before the next wave engages.</p>
+        </div>
+        <div id="perk-choices" class="perk-choices"></div>
+      </div>
+    </section>
+
+    <!-- Pause Overlay -->
+    <section id="pause-overlay" class="overlay hidden">
+      <div class="poster-card narrow">
+        <div class="hazard-bar" aria-hidden="true"></div>
+        <div class="poster-topbar">
+          <span>HOLD</span>
+          <span>ESC / P</span>
+        </div>
+        <h2 class="draft-title">PAUSED</h2>
+        <div id="pause-perks" class="pause-perks"></div>
+        <div class="stack-actions">
+          <button id="resume-btn" class="swiss-btn primary">RESUME [P]</button>
+          <button id="pause-settings-btn" class="swiss-btn">SETTINGS [,]</button>
+          <button id="restart-pause-btn" class="swiss-btn">RESTART [R]</button>
+          <button id="menu-pause-btn" class="swiss-btn ghost">ARCHIVE / EDITIONS</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Customizable Settings Overlay -->
+    <section id="settings-overlay" class="overlay hidden">
+      <div class="poster-card wide">
+        <div class="hazard-bar" aria-hidden="true"></div>
+        <div class="poster-topbar">
+          <span>SYS-CFG // CUSTOMIZATION</span>
+          <span>AUTO-SAVED · ESC</span>
+        </div>
+
+        <div class="settings-grid">
+          <!-- Column 1: Gameplay, Input & Audio -->
+          <div class="settings-col">
+            <div class="settings-section-head">01 / GAMEPLAY &amp; INPUT</div>
+
+            <div class="setting-row">
+              <div class="setting-label">
+                <span>DIFFICULTY</span>
+                <small id="desc-difficulty">BALANCED · 1.00× SCORE</small>
+              </div>
+              <div class="seg-group" data-setting="difficulty">
+                <button class="seg-btn" data-val="chill">CHILL</button>
+                <button class="seg-btn" data-val="standard">STD</button>
+                <button class="seg-btn" data-val="hardcore">HARD</button>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-label">
+                <span>GAME SPEED</span>
+                <small>SIMULATION PACE</small>
+              </div>
+              <div class="seg-group" data-setting="gameSpeed">
+                <button class="seg-btn" data-val="0.75">0.75×</button>
+                <button class="seg-btn" data-val="1">1.00×</button>
+                <button class="seg-btn" data-val="1.25">1.25×</button>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-label">
+                <span>START WAVE</span>
+                <small>NEXT RUN ENTRY</small>
+              </div>
+              <div class="seg-group" data-setting="startWave">
+                <button class="seg-btn" data-val="1">W-01</button>
+                <button class="seg-btn" data-val="3">W-03</button>
+                <button class="seg-btn" data-val="5">W-05</button>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-label">
+                <span>INPUT MODE</span>
+                <small>STEERING LOCK</small>
+              </div>
+              <div class="seg-group" data-setting="inputMode">
+                <button class="seg-btn" data-val="auto">AUTO</button>
+                <button class="seg-btn" data-val="keyboard">KEYS</button>
+                <button class="seg-btn" data-val="mouse">MOUSE</button>
+              </div>
+            </div>
+
+            <div class="settings-section-head">02 / AUDIO SYNTH</div>
+
+            <div class="setting-row">
+              <div class="setting-label">
+                <span>VOLUME</span>
+                <small id="vol-readout">80%</small>
+              </div>
+              <input id="volume-slider" class="swiss-range" type="range" min="0" max="100" step="5" value="80" aria-label="Master volume" />
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-label">
+                <span>SYNTH TONE</span>
+                <small>WAVEFORM PROFILE</small>
+              </div>
+              <div class="seg-group" data-setting="audioProfile">
+                <button class="seg-btn" data-val="auto">AUTO</button>
+                <button class="seg-btn" data-val="chip">CHIP</button>
+                <button class="seg-btn" data-val="brutal">BRUTAL</button>
+              </div>
+            </div>
+
+            <div class="settings-section-head">03 / DATA</div>
+            <div class="data-actions">
+              <button id="reset-settings-btn" class="tool-btn">RESET DEFAULTS</button>
+              <button id="wipe-save-btn" class="tool-btn danger-btn">CLEAR SAVE</button>
+            </div>
+          </div>
+
+          <!-- Column 2: Visuals, Impact Frames & Minimalism -->
+          <div class="settings-col">
+            <div class="settings-section-head">04 / IMPACT FRAMES &amp; FEEL</div>
+
+            <div class="setting-row">
+              <div class="setting-label">
+                <span>IMPACT FRAMES</span>
+                <small>ANIME GRAPHIC CUTS</small>
+              </div>
+              <div class="seg-group" data-setting="impactFrames">
+                <button class="seg-btn" data-val="off">OFF</button>
+                <button class="seg-btn" data-val="major">MAJOR</button>
+                <button class="seg-btn" data-val="all">ALL</button>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-label">
+                <span>IMPACT STYLE</span>
+                <small>FLASH TREATMENT</small>
+              </div>
+              <div class="seg-group" data-setting="impactStyle">
+                <button class="seg-btn" data-val="invert">INVERT</button>
+                <button class="seg-btn" data-val="accent">ACCENT</button>
+                <button class="seg-btn" data-val="ascii">ASCII</button>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-label">
+                <span>IMPACT HOLD</span>
+                <small>FREEZE PAUSE WEIGHT</small>
+              </div>
+              <div class="seg-group" data-setting="impactHold">
+                <button class="seg-btn" data-val="snap">SNAP</button>
+                <button class="seg-btn" data-val="dramatic">HEAVY</button>
+                <button class="seg-btn" data-val="full">1.0S</button>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-label">
+                <span>SCREEN SHAKE</span>
+                <small>IMPACT JOLT</small>
+              </div>
+              <div class="seg-group" data-setting="shake">
+                <button class="seg-btn" data-val="0">OFF</button>
+                <button class="seg-btn" data-val="0.45">LOW</button>
+                <button class="seg-btn" data-val="1">FULL</button>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-label">
+                <span>HITSTOP</span>
+                <small>SHATTER FREEZE</small>
+              </div>
+              <div class="seg-group" data-setting="hitstop">
+                <button class="seg-btn" data-val="true">ON</button>
+                <button class="seg-btn" data-val="false">OFF</button>
+              </div>
+            </div>
+
+            <div class="settings-section-head">05 / MINIMALISM &amp; STYLE</div>
+
+            <div class="setting-row">
+              <div class="setting-label">
+                <span>HUD LAYOUT</span>
+                <small>CHROME DENSITY</small>
+              </div>
+              <div class="seg-group" data-setting="hudMode">
+                <button class="seg-btn" data-val="full">FULL</button>
+                <button class="seg-btn" data-val="compact">SLIM</button>
+                <button class="seg-btn" data-val="zen">ZEN</button>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-label">
+                <span>RENDER STYLE</span>
+                <small>PIXEL VS ASCII</small>
+              </div>
+              <div class="seg-group" data-setting="renderStyle">
+                <button class="seg-btn" data-val="edition">AUTO</button>
+                <button class="seg-btn" data-val="pixel">PIXEL</button>
+                <button class="seg-btn" data-val="ascii">ASCII</button>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-label">
+                <span>SPRITE SCALE</span>
+                <small>GEOMETRY SIZE</small>
+              </div>
+              <div class="seg-group" data-setting="spriteScale">
+                <button class="seg-btn" data-val="0.85">MICRO</button>
+                <button class="seg-btn" data-val="1">STD</button>
+                <button class="seg-btn" data-val="1.2">CHUNKY</button>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-label">
+                <span>GRID &amp; DEBRIS</span>
+                <small>BACKDROP / PARTICLES</small>
+              </div>
+              <div class="dual-seg">
+                <div class="seg-group" data-setting="gridMode">
+                  <button class="seg-btn" data-val="full">GRID</button>
+                  <button class="seg-btn" data-val="minimal">MIN</button>
+                  <button class="seg-btn" data-val="off">OFF</button>
+                </div>
+                <div class="seg-group" data-setting="particles">
+                  <button class="seg-btn" data-val="0.45">LO</button>
+                  <button class="seg-btn" data-val="1">MD</button>
+                  <button class="seg-btn" data-val="1.6">HI</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-label">
+                <span>ACCENT INK</span>
+                <small>CUSTOM PRIMARY</small>
+              </div>
+              <div id="accent-swatches" class="accent-swatches" data-setting="accentOverride">
+                <button class="accent-dot" data-val="auto" title="Edition Default">A</button>
+                <button class="accent-dot" data-val="vermilion" style="background:#e63222" title="Swiss Vermilion"></button>
+                <button class="accent-dot" data-val="orange" style="background:#ff4800" title="Industrial Orange"></button>
+                <button class="accent-dot" data-val="cobalt" style="background:#0047ab" title="Cobalt Blue"></button>
+                <button class="accent-dot" data-val="gold" style="background:#d49400" title="Signal Gold"></button>
+                <button class="accent-dot" data-val="mono" style="background:#141414" title="Pure Ink"></button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="poster-actions">
+          <button id="close-settings-btn" class="swiss-btn primary">APPLY &amp; CLOSE [ESC]</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Online 1v1 Private Room Overlay -->
+    <section id="room-overlay" class="overlay hidden">
+      <div class="poster-card wide">
+        <div class="hazard-bar" aria-hidden="true"></div>
+        <div class="poster-topbar">
+          <span>NET-01 // 1V1 PRIVATE ROOM</span>
+          <span id="net-status-pill" class="muted-code">OFFLINE</span>
+        </div>
+
+        <!-- Step A: Connect / Create / Join -->
+        <div id="room-connect-view" class="room-body">
+          <div class="room-row-2">
+            <div class="room-field">
+              <label class="spec-head" for="callsign-input">YOUR CALLSIGN</label>
+              <input id="callsign-input" class="swiss-input" type="text" maxlength="12" placeholder="PILOT-01" />
+            </div>
+            <div class="room-field">
+              <label class="spec-head" for="server-url-input">SERVER URL (AUTO WHEN HOSTED)</label>
+              <input id="server-url-input" class="swiss-input" type="text" placeholder="ws://localhost:3000" />
+            </div>
+          </div>
+
+          <div class="room-split-actions">
+            <div class="room-panel">
+              <div class="spec-head">01 / HOST PRIVATE ROOM</div>
+              <p class="draft-sub">Generate a private 4-letter code &amp; invite link for your friend.</p>
+              <button id="create-room-btn" class="swiss-btn primary">CREATE ROOM</button>
+            </div>
+            <div class="room-panel">
+              <div class="spec-head">02 / JOIN WITH CODE</div>
+              <div class="join-row">
+                <input id="join-code-input" class="swiss-input code-input" type="text" maxlength="6" placeholder="ABCD" />
+                <button id="join-room-btn" class="swiss-btn">JOIN</button>
+              </div>
+              <p class="draft-sub">Enter your friend's 4-letter code.</p>
+            </div>
+          </div>
+
+          <div id="room-error" class="room-error hidden"></div>
+        </div>
+
+        <!-- Step B: Inside Private Room Lobby -->
+        <div id="room-lobby-view" class="room-body hidden">
+          <div class="room-code-banner">
+            <div>
+              <div class="cell-meta">PRIVATE ROOM CODE</div>
+              <div id="lobby-code-val" class="room-code-big">----</div>
+            </div>
+            <div class="lobby-copy-actions">
+              <button id="copy-link-btn" class="swiss-btn">COPY INVITE LINK</button>
+              <button id="leave-room-btn" class="tool-btn danger-btn">LEAVE</button>
+            </div>
+          </div>
+
+          <div class="lobby-slots">
+            <div class="slot-card" id="slot-host">
+              <div class="cell-meta">P1 // HOST</div>
+              <div id="slot-host-name" class="slot-name">---</div>
+              <div id="slot-host-meta" class="slot-meta">WAITING</div>
+            </div>
+            <div class="slot-vs">VS</div>
+            <div class="slot-card" id="slot-guest">
+              <div class="cell-meta">P2 // CHALLENGER</div>
+              <div id="slot-guest-name" class="slot-name">WAITING FOR FRIEND...</div>
+              <div id="slot-guest-meta" class="slot-meta">SHARE CODE OR LINK</div>
+            </div>
+          </div>
+
+          <div class="lobby-rules">
+            <div class="setting-row">
+              <div class="setting-label">
+                <span>1V1 RULESET</span>
+                <small>HOST CONTROLS RULES</small>
+              </div>
+              <div id="room-mode-seg" class="seg-group">
+                <button class="seg-btn active" data-rmode="duel">KO DUEL</button>
+                <button class="seg-btn" data-rmode="score">90S SCORE</button>
+              </div>
+            </div>
+            <div class="setting-row">
+              <div class="setting-label">
+                <span>ARENA HAZARDS</span>
+                <small>NEUTRAL HOSTILES + CHAINS</small>
+              </div>
+              <div id="room-hazards-seg" class="seg-group">
+                <button class="seg-btn active" data-rhaz="true">ON</button>
+                <button class="seg-btn" data-rhaz="false">PURE 1V1</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="poster-actions split">
+            <button id="lobby-ready-btn" class="swiss-btn">READY UP</button>
+            <button id="lobby-start-btn" class="swiss-btn primary" disabled>WAITING FOR P2...</button>
+          </div>
+        </div>
+
+        <div class="poster-actions">
+          <button id="close-room-btn" class="swiss-btn ghost">BACK TO MENU [ESC]</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 1v1 Match Over Overlay -->
+    <section id="duel-over-overlay" class="overlay hidden">
+      <div class="poster-card">
+        <div class="hazard-bar" aria-hidden="true"></div>
+        <div class="poster-topbar">
+          <span>1V1 MATCH COMPLETE</span>
+          <span id="duel-over-mode">KO DUEL</span>
+        </div>
+        <div class="gameover-score-block">
+          <div id="duel-over-sub" class="cell-meta">RESULT</div>
+          <div id="duel-over-title" class="final-num">VICTORY</div>
+        </div>
+        <div class="summary-grid duel-summary">
+          <div class="summary-cell">
+            <span id="duel-res-p1-name" class="cell-meta">P1</span>
+            <strong id="duel-res-p1-val">00</strong>
+          </div>
+          <div class="summary-cell">
+            <span id="duel-res-p2-name" class="cell-meta">P2</span>
+            <strong id="duel-res-p2-val">00</strong>
+          </div>
+          <div class="summary-cell">
+            <span class="cell-meta">CLASHES</span>
+            <strong id="duel-res-clashes">00</strong>
+          </div>
+        </div>
+        <div class="poster-actions split">
+          <button id="duel-rematch-btn" class="swiss-btn primary">REMATCH</button>
+          <button id="duel-lobby-btn" class="swiss-btn">RETURN TO LOBBY</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Game Over Overlay -->
+    <section id="gameover-overlay" class="overlay hidden">
+      <div class="poster-card">
+        <div class="hazard-bar" aria-hidden="true"></div>
+        <div class="poster-topbar">
+          <span>TERMINATED</span>
+          <span id="new-best-pill" class="badge-red hidden">NEW RECORD</span>
+        </div>
+
+        <div class="gameover-score-block">
+          <div class="cell-meta">FINAL SCORE</div>
+          <div id="final-score" class="final-num">000000</div>
+        </div>
+
+        <div id="unlock-banner" class="unlock-banner hidden"></div>
+
+        <div class="summary-grid">
+          <div class="summary-cell">
+            <span class="cell-meta">BEST</span>
+            <strong id="final-best">000000</strong>
+          </div>
+          <div class="summary-cell">
+            <span class="cell-meta">WAVE</span>
+            <strong id="final-wave">01</strong>
+          </div>
+          <div class="summary-cell">
+            <span class="cell-meta">COMBO</span>
+            <strong id="final-combo">x01</strong>
+          </div>
+          <div class="summary-cell">
+            <span class="cell-meta">SHATTERED</span>
+            <strong id="final-shattered">00</strong>
+          </div>
+        </div>
+
+        <div class="poster-actions split">
+          <button id="retry-btn" class="swiss-btn primary">RELAUNCH [SPACE]</button>
+          <button id="menu-over-btn" class="swiss-btn">EDITIONS &amp; SKINS</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
